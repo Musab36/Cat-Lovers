@@ -6,29 +6,26 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.salajim.musab.catlovers.adapters.CatsAdapter;
 import com.salajim.musab.catlovers.api.Service;
-import com.salajim.musab.catlovers.api.Client;
 import com.salajim.musab.catlovers.models.Cats;
-import com.salajim.musab.catlovers.models.CatsResponse;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.Bind;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
-    @Bind(R.id.recyclerview)
     RecyclerView recyclerView;
 
-    private List<Cats> catsList;
+    public List<Cats> catsList;
     private CatsAdapter mAdapter;
 
     ActionBar toolbar;
@@ -38,14 +35,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         toolbar = getSupportActionBar();
-        toolbar.setTitle("Cats");
+        toolbar.setTitle("Cats Images");
 
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
-        catsList = new ArrayList<>();
-        mAdapter = new CatsAdapter(this, catsList);
-        recyclerView.setAdapter(mAdapter);
-        mAdapter.notifyDataSetChanged();
+        recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
+        /*
+        Intent intent = getIntent();
+        String cats = intent.getStringExtra("cats");
+        */
+
 
         getData();
     }
@@ -55,44 +52,36 @@ public class MainActivity extends AppCompatActivity {
         progressDialog.setMessage("Loading ....");
         progressDialog.show();
 
-        try {
-            if(BuildConfig.API_KEY.isEmpty()) {
-                Toast.makeText(this, "Please obtain your api key from the developers", Toast.LENGTH_SHORT).show();
-                return;
+        final Service service = new Service();
+        service.getCats(new Callback() {
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+                Toast.makeText(getApplicationContext(), "Error fetching data", Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
             }
 
-            Client client = new Client();
-            Service apiService = Client.getClient().create(Service.class);
-            Call<CatsResponse> call = apiService.getImages(BuildConfig.API_KEY);
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                progressDialog.dismiss();
+                catsList = service.prossesResults(response);
 
-            call.enqueue(new Callback<CatsResponse>() {
-                @Override
-                public void onResponse(Call<CatsResponse> call, Response<CatsResponse> response) {
-                    progressDialog.dismiss();
+                MainActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        recyclerView.setHasFixedSize(true);
+                        recyclerView.setLayoutManager(new GridLayoutManager(getApplicationContext(), 3));
+                        catsList = new ArrayList<>();
+                        mAdapter = new CatsAdapter(getApplicationContext(), catsList);
+                        recyclerView.setAdapter(mAdapter);
+                        mAdapter.notifyDataSetChanged();
 
-                    if(response == null) {
-                        Toast.makeText(MainActivity.this, "No response from the server", Toast.LENGTH_SHORT).show();
                     }
+                });
+            }
+        });
 
-                    List<Cats> catsList = response.body().getImages();
-
-                    mAdapter = new CatsAdapter(getApplicationContext(), catsList);
-                    recyclerView.setAdapter(mAdapter);
-                    recyclerView.smoothScrollToPosition(0);
-                }
-
-                @Override
-                public void onFailure(Call<CatsResponse> call, Throwable t) {
-                    progressDialog.dismiss();
-                    Log.d("Server error", t.getMessage());
-                    Toast.makeText(MainActivity.this, "Error fetching data", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-       } catch (Exception e) {
-            Log.d("get Data error", e.getMessage());
-            Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
-        }
     }
 }
 

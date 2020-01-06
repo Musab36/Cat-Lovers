@@ -1,5 +1,4 @@
 package com.salajim.musab.catlovers.models;
-
 import android.os.Parcel;
 import android.os.Parcelable;
 

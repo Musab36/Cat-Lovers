@@ -13,9 +13,9 @@ import com.salajim.musab.catlovers.R;
 import com.salajim.musab.catlovers.models.Cats;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.Bind;
 
 public class CatsAdapter extends RecyclerView.Adapter<CatsAdapter.MyViewHolder> {
     private final static int MAX_WIDTH = 200;
@@ -51,8 +51,7 @@ public class CatsAdapter extends RecyclerView.Adapter<CatsAdapter.MyViewHolder> 
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
-        @Bind(R.id.catsImage)
-        ImageView mCatsImage;
+        ImageView mCatsImage = (ImageView) itemView.findViewById(R.id.catsImage);
         private Context mContext;
 
         public MyViewHolder(View itemView) {
